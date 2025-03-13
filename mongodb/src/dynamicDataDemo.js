@@ -26,7 +26,6 @@ async function run() {
     const allUsers = await users.find({}).toArray();
     console.log("Alle Benutzer:", allUsers);
 
-    console.log("Benutzer mit Telefon:", usersWithPhone);
   } catch (error) {
     console.error("Fehler:", error);
   } finally {
