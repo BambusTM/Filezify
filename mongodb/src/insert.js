@@ -572,10 +572,6 @@ async function run() {
       },
     ];
 
-    // await db.collection('Users').deleteMany({});
-    // await db.collection('Files').deleteMany({});
-    // await db.collection('Permission').deleteMany({});
-
     await db.collection("Users").insertMany(users);
     await db.collection("Files").insertMany(files);
     await db.collection("Permission").insertMany(permissions);
