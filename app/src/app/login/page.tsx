@@ -1,12 +1,13 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import AuthCard from '@/components/AuthCard';
-import AuthTitle from '@/components/AuthTitle';
-import AuthFormInput from '@/components/AuthFormInput';
+import AuthCard from '@/components/molecules/AuthCard';
+import AuthFormInput from '@/components/molecules/AuthFormInput';
+import AuthTitle from '@/components/molecules/AuthTitle';
+import Button from '@/components/atoms/Button';
+import {signIn} from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,26 +73,17 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-                <div className="text-red-400 text-sm text-center">{error}</div>
-            )}
+            {error && <div className="text-red-400 text-sm text-center">{error}</div>}
 
             <div>
-              <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full btn btn-primary"
-              >
+              <Button disabled={loading} className="w-full btn-primary">
                 {loading ? 'Signing in...' : 'Sign in'}
-              </button>
+              </Button>
             </div>
           </form>
 
           <div className="text-center mt-6">
-            <Link
-                href="/register"
-                className="text-accent hover:text-accent-light font-medium"
-            >
+            <Link href="/register" className="text-accent hover:text-accent-light font-medium">
               Don&apos;t have an account? Sign up
             </Link>
           </div>

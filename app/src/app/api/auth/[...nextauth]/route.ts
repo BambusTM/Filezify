@@ -1,5 +1,5 @@
+import type {NextAuthOptions} from 'next-auth';
 import NextAuth from 'next-auth';
-import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/models/User';
@@ -34,14 +34,12 @@ export const authOptions: NextAuthOptions = {
             console.error('Invalid password for user:', credentials.email);
             return null;
           }
-          
-          const userData = {
+
+          return {
             id: user._id.toString(),
             email: user.email,
             name: user.username,
           };
-          
-          return userData;
         } catch (error) {
           console.error('Auth error:', error);
           return null;
@@ -78,4 +76,4 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST }; 
+export { handler as GET, handler as POST };

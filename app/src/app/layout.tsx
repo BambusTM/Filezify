@@ -1,8 +1,8 @@
-// file: src/app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import Providers from '@/components/Providers';
-import DecorativeBackground from "@/components/DecorativeBackground";
+import DecorativeBackground from '@/components/atoms/DecorativeBackground';
+import Providers from "@/providers/Providers";
+import {ReactNode} from "react";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,11 +11,7 @@ export const metadata = {
     description: 'Secure cloud storage for your files',
 };
 
-export default function RootLayout({
-                                       children,
-                                   }: {
-    children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
     return (
         <html lang="en" className="dark">
         <body className={`${inter.className} bg-background text-foreground relative`}>

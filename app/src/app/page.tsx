@@ -1,83 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import Navigation from '@/components/Navigation';
-
-interface File {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: string;
-  downloadCount: number;
-  locked: boolean;
-  comment: string;
-  isOwner: boolean;
-}
+import Navigation from '@/components/organisms/Navigation';
+import { useFiles } from '@/hooks/useFiles';
+import Button from '@/components/atoms/Button';
+import {ChangeEvent} from "react";
 
 export default function HomePage() {
-  const { status } = useSession();
-  const router = useRouter();
-  const [files, setFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { files, loading, error, uploadFile } = useFiles();
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    } else if (status === 'authenticated') {
-      fetchFiles();
-    }
-  }, [status, router]);
-
-  const fetchFiles = async () => {
-    try {
-      const response = await fetch('/api/files');
-      const data = await response.json();
-      setFiles(data.files);
-    } catch (err) {
-      console.error('Error fetching files:', err);
-      setError('Error fetching files');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setUploading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await fetch('/api/files/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.message);
-        return;
-      }
-
-      await fetchFiles();
-    } catch (err) {
-      console.error('Error uploading file:', err);
-      setError('Error uploading file');
-    } finally {
-      setUploading(false);
-    }
+    await uploadFile(file);
   };
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-xl text-gray-300">Loading...</div>
@@ -100,27 +37,25 @@ export default function HomePage() {
                 <input
                     type="file"
                     onChange={handleFileUpload}
-                    disabled={uploading}
+                    disabled={loading}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <span className="btn btn-primary">Upload File</span>
+                <Button className="btn-primary">Upload File</Button>
               </label>
-              {uploading && <p className="ml-4 text-gray-400">Uploading...</p>}
+              {loading && <p className="ml-4 text-gray-400">Uploading...</p>}
             </div>
 
-            {error && (
-                <div className="mb-4 text-center text-red-400">{error}</div>
-            )}
+            {error && <div className="mb-4 text-center text-red-400">{error}</div>}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {files.length === 0 ? (
                   <p className="text-gray-400 col-span-full text-center">No files uploaded yet</p>
               ) : (
-                  files.map((file) => (
+                  files.map((file: any) => (
                       <div
-                          className="relative group bg-gray-800 rounded-lg p-4 shadow-lg transform transition hover:-translate-y-1 fade-in cursor-pointer"
-                          onClick={() => window.location.href = `/api/files/${file.id}/download`}
                           key={file.id}
+                          className="relative group bg-gray-800 rounded-lg p-4 shadow-lg transform transition hover:-translate-y-1 fade-in cursor-pointer"
+                          onClick={() => (window.location.href = `/api/files/${file.id}/download`)}
                       >
                         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <svg
@@ -138,7 +73,6 @@ export default function HomePage() {
                             />
                           </svg>
                         </div>
-
                         <h3 className="text-xl font-semibold text-accent">{file.name}</h3>
                         <p className="text-gray-400 text-sm">
                           {new Date(file.uploadedAt).toLocaleDateString()} • {(file.size / 1024 / 1024).toFixed(2)} MB

@@ -1,8 +1,8 @@
 'use client';
-import React from 'react';
+import {ReactNode} from 'react';
 
 interface AuthCardProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 export default function AuthCard({ children }: AuthCardProps) {

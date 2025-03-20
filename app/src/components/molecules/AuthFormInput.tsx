@@ -1,5 +1,7 @@
 'use client';
-import React from 'react';
+import Label from '../atoms/Label';
+import Input from '../atoms/Input';
+import {ChangeEvent} from "react";
 
 interface AuthFormInputProps {
     id: string;
@@ -7,7 +9,7 @@ interface AuthFormInputProps {
     type: string;
     placeholder: string;
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
     label: string;
     autoComplete?: string;
 }
@@ -24,19 +26,16 @@ export default function AuthFormInput({
                                       }: AuthFormInputProps) {
     return (
         <div>
-            <label htmlFor={id} className="block text-gray-300">
-                {label}
-            </label>
-            <input
+            <Label htmlFor={id}>{label}</Label>
+            <Input
                 id={id}
                 name={name}
                 type={type}
-                autoComplete={autoComplete}
-                required
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
-                className="w-full px-4 py-3 bg-gray-800 text-foreground rounded-md border border-gray-700 focus:outline-none focus:ring-2 focus:ring-accent"
+                autoComplete={autoComplete}
+                required
             />
         </div>
     );

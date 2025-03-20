@@ -1,6 +1,4 @@
-// file: src/components/Navigation.tsx
 'use client';
-
 import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -20,10 +18,7 @@ export default function Navigation() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-300">{session.user.name}</span>
-              <button
-                  onClick={() => signOut()}
-                  className="btn btn-secondary"
-              >
+              <button onClick={() => signOut()} className="btn btn-secondary">
                 Sign out
               </button>
             </div>
