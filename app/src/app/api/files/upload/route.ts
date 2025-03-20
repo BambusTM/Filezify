@@ -57,7 +57,7 @@ export async function POST(request: FileUploadRequest) {
       path: filepath,
       size: file.size,
       type: file.type,
-      owner: session.user.id,
+      ownerId: session.user.id,
       uploadedAt: new Date(),
       downloadCount: 0,
       locked: false,
