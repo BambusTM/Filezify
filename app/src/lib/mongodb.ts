@@ -6,7 +6,6 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
 }
 
-console.log('MongoDB URI:', MONGODB_URI.replace(/:[^:]*@/, ':***@')); // Log URI with password masked
 
 let isConnected = false;
 

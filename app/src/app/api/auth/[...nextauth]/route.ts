@@ -13,8 +13,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('Authorize called with:', { email: credentials?.email });
-        
         if (!credentials?.email || !credentials?.password) {
           console.error('Missing credentials');
           return null;
@@ -43,7 +41,6 @@ export const authOptions: NextAuthOptions = {
             name: user.username,
           };
           
-          console.log('User authenticated successfully:', { id: userData.id, email: userData.email });
           return userData;
         } catch (error) {
           console.error('Auth error:', error);
@@ -64,21 +61,19 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      console.log('JWT callback:', { token, user });
       if (user) {
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      console.log('Session callback:', { session, token });
       if (token && session.user) {
         session.user.id = token.id;
       }
       return session;
     },
   },
-  debug: true,
+  debug: false,
 };
 
 const handler = NextAuth(authOptions);

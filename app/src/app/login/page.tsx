@@ -20,7 +20,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      console.log('Attempting login with:', { email });
       const result = await signIn('credentials', {
         redirect: false,
         email,
@@ -28,13 +27,10 @@ export default function LoginPage() {
         callbackUrl,
       });
 
-      console.log('Sign in result:', result);
-
       if (result?.error) {
         console.error('Login error:', result.error);
         setError(result.error);
       } else {
-        console.log('Login successful, redirecting to:', callbackUrl);
         router.push(callbackUrl);
       }
     } catch (err) {
