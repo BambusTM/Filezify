@@ -1,48 +1,25 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import AuthCard from '@/components/molecules/AuthCard';
 import AuthFormInput from '@/components/molecules/AuthFormInput';
 import AuthTitle from '@/components/molecules/AuthTitle';
 import Button from '@/components/atoms/Button';
-import {signIn} from "next-auth/react";
+import {useAuth} from "@/hooks/useAuth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const { login, loading, error } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl,
-      });
-
-      if (result?.error) {
-        console.error('Login error:', result.error);
-        setError(result.error);
-      } else {
-        router.push(callbackUrl);
-      }
-    } catch (err) {
-      console.error('Login exception:', err);
-      setError('An error occurred during login');
-    } finally {
-      setLoading(false);
-    }
+    await login(email, password, callbackUrl);
   };
 
   return (
