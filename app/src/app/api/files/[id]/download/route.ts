@@ -5,6 +5,7 @@ import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
 import Permission from '@/models/Permission';
 import fs from 'fs';
+import path from 'path';
 
 export async function GET(
     _request: Request,
@@ -31,6 +32,7 @@ export async function GET(
       );
     }
 
+    // Check permission (read permission or ownership)
     const hasPermission = await Permission.findOne({
       fileId: file._id,
       userId: session.user.id,
@@ -44,7 +46,10 @@ export async function GET(
       );
     }
 
-    if (!fs.existsSync(file.path)) {
+    // Reconstruct full file path using stored relative path
+    const fullFilePath = path.join(process.cwd(), 'uploads', file.ownerId.toString(), file.path);
+
+    if (!fs.existsSync(fullFilePath)) {
       return NextResponse.json(
           { message: 'File not found on disk' },
           { status: 404 }
@@ -54,8 +59,8 @@ export async function GET(
     file.downloadCount += 1;
     await file.save();
 
-    const fileStream = fs.createReadStream(file.path);
-    const fileSize = fs.statSync(file.path).size;
+    const fileStream = fs.createReadStream(fullFilePath);
+    const fileSize = fs.statSync(fullFilePath).size;
     const headers = new Headers();
     headers.set('Content-Type', file.type);
     headers.set('Content-Length', fileSize.toString());
