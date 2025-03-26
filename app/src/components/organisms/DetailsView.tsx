@@ -1,6 +1,7 @@
 'use client';
 
 import { FileData } from '@/hooks/useFiles';
+import { useDownloadFile } from '@/lib/downloadFile';
 
 interface DetailsViewProps {
   folders: string[];
@@ -17,6 +18,13 @@ export default function DetailsView({
   onDeleteFolder,
   onDeleteFile
 }: DetailsViewProps) {
+  const { downloadFile } = useDownloadFile();
+
+  const handleFileClick = (e: React.MouseEvent, fileId: string) => {
+    e.preventDefault();
+    downloadFile(fileId);
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
       {folders.length === 0 && files.length === 0 ? (
@@ -67,7 +75,7 @@ export default function DetailsView({
             <div 
               key={file.id}
               className="grid grid-cols-12 gap-4 p-4 border-b border-gray-700 hover:bg-gray-700 cursor-pointer"
-              onClick={() => (window.location.href = `/api/files/${file.id}/download`)}
+              onClick={(e) => handleFileClick(e, file.id)}
             >
               <div className="col-span-5 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

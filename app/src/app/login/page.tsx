@@ -50,8 +50,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && <div className="text-red-400 text-sm text-center">{error}</div>}
-
             <div>
               <Button disabled={loading} className="w-full btn-primary">
                 {loading ? 'Signing in...' : 'Sign in'}

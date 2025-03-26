@@ -26,8 +26,6 @@ export default function FileContent({
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {error && <div className="mb-4 text-center text-red-400">{error}</div>}
-        
         {viewType === 'grid' ? (
           <GridView 
             folders={folders} 

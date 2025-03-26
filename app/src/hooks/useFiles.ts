@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchFilesAPI, uploadFileAPI } from '@/services/fileService';
 import axios from 'axios';
+import { useToast } from '@/providers/ToastProvider';
 
 export interface FileData {
     id: string;
@@ -18,6 +19,7 @@ export function useFiles() {
     const [currentFolder, setCurrentFolder] = useState<string>(''); // current folder path, empty for root
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { showError } = useToast();
 
     const fetchFiles = useCallback(async () => {
         setLoading(true);
@@ -26,15 +28,18 @@ export function useFiles() {
             setFiles(data.files as FileData[]);
             setFolders(data.folders as string[]);
         } catch (err: unknown) {
+            let errorMessage: string;
             if (err instanceof Error) {
-                setError(err.message);
+                errorMessage = err.message;
             } else {
-                setError('Error fetching files');
+                errorMessage = 'Error fetching files';
             }
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [currentFolder]);
+    }, [currentFolder, showError]);
 
     const uploadFile = useCallback(async (file: File) => {
         setLoading(true);
@@ -42,15 +47,18 @@ export function useFiles() {
             await uploadFileAPI(file, currentFolder);
             await fetchFiles();
         } catch (err: unknown) {
+            let errorMessage: string;
             if (err instanceof Error) {
-                setError(err.message);
+                errorMessage = err.message;
             } else {
-                setError('Error uploading file');
+                errorMessage = 'Error uploading file';
             }
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [currentFolder, fetchFiles]);
+    }, [currentFolder, fetchFiles, showError]);
 
     const createFolder = useCallback(async (folderName: string) => {
         setLoading(true);
@@ -58,15 +66,18 @@ export function useFiles() {
             await axios.post('/api/folders', { folderName, parentPath: currentFolder });
             await fetchFiles();
         } catch (err: unknown) {
+            let errorMessage: string;
             if (err instanceof Error) {
-                setError(err.message);
+                errorMessage = err.message;
             } else {
-                setError('Error creating folder');
+                errorMessage = 'Error creating folder';
             }
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [currentFolder, fetchFiles]);
+    }, [currentFolder, fetchFiles, showError]);
 
     const deleteFile = useCallback(async (fileId: string) => {
         setLoading(true);
@@ -74,15 +85,18 @@ export function useFiles() {
             await axios.delete(`/api/files/${fileId}`);
             await fetchFiles();
         } catch (err: unknown) {
+            let errorMessage: string;
             if (err instanceof Error) {
-                setError(err.message);
+                errorMessage = err.message;
             } else {
-                setError('Error deleting file');
+                errorMessage = 'Error deleting file';
             }
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [fetchFiles]);
+    }, [fetchFiles, showError]);
 
     const deleteFolder = useCallback(async (folderName: string) => {
         setLoading(true);
@@ -90,15 +104,18 @@ export function useFiles() {
             await axios.delete(`/api/folders?path=${encodeURIComponent(currentFolder)}&name=${encodeURIComponent(folderName)}`);
             await fetchFiles();
         } catch (err: unknown) {
+            let errorMessage: string;
             if (err instanceof Error) {
-                setError(err.message);
+                errorMessage = err.message;
             } else {
-                setError('Error deleting folder');
+                errorMessage = 'Error deleting folder';
             }
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
             setLoading(false);
         }
-    }, [currentFolder, fetchFiles]);
+    }, [currentFolder, fetchFiles, showError]);
 
     useEffect(() => {
         fetchFiles();

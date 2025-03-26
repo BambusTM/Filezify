@@ -1,6 +1,7 @@
 'use client';
 
 import { FileData } from '@/hooks/useFiles';
+import { useDownloadFile } from '@/lib/downloadFile';
 
 interface GridViewProps {
   folders: string[];
@@ -17,6 +18,13 @@ export default function GridView({
   onDeleteFolder,
   onDeleteFile
 }: GridViewProps) {
+  const { downloadFile } = useDownloadFile();
+
+  const handleFileClick = (e: React.MouseEvent, fileId: string) => {
+    e.preventDefault();
+    downloadFile(fileId);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {folders.map((folder) => (
@@ -53,7 +61,7 @@ export default function GridView({
         <div
           key={file.id}
           className="relative group bg-gray-800 rounded-lg p-4 shadow-lg transform transition hover:-translate-y-1 fade-in cursor-pointer"
-          onClick={() => (window.location.href = `/api/files/${file.id}/download`)}
+          onClick={(e) => handleFileClick(e, file.id)}
         >
           <h3 className="text-xl font-semibold text-accent">{file.name}</h3>
           <p className="text-gray-400 text-sm">
