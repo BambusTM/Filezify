@@ -68,9 +68,53 @@ export function useFiles() {
         }
     }, [currentFolder, fetchFiles]);
 
+    const deleteFile = useCallback(async (fileId: string) => {
+        setLoading(true);
+        try {
+            await axios.delete(`/api/files/${fileId}`);
+            await fetchFiles();
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Error deleting file');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [fetchFiles]);
+
+    const deleteFolder = useCallback(async (folderName: string) => {
+        setLoading(true);
+        try {
+            await axios.delete(`/api/folders?path=${encodeURIComponent(currentFolder)}&name=${encodeURIComponent(folderName)}`);
+            await fetchFiles();
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Error deleting folder');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [currentFolder, fetchFiles]);
+
     useEffect(() => {
         fetchFiles();
     }, [fetchFiles]);
 
-    return { files, folders, loading, error, uploadFile, fetchFiles, currentFolder, setCurrentFolder, createFolder };
+    return { 
+        files, 
+        folders, 
+        loading, 
+        error, 
+        uploadFile, 
+        fetchFiles, 
+        currentFolder, 
+        setCurrentFolder, 
+        createFolder,
+        deleteFile,
+        deleteFolder 
+    };
 }
