@@ -71,7 +71,8 @@ export async function HEAD(
       );
     }
 
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     return NextResponse.json(
@@ -102,7 +103,8 @@ export async function GET(
       );
     }
 
-    const { id } = context.params;
+    const params = await context.params;
+    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     if (result.status !== 200) {

@@ -8,8 +8,7 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    '/',
+    '/app/:path*',
     '/api/files/:path*',
-    '/((?!login|register|api/auth).*)',
   ],
 }; 
