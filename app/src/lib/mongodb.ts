@@ -56,4 +56,21 @@ async function connectToDatabase() {
   }
 }
 
+// Health check function to verify database connection
+async function checkDatabaseConnection() {
+  try {
+    // Check if already connected
+    if (!isConnected) {
+      await connectToDatabase();
+    }
+    
+    // Verify connection is actually alive
+    return mongoose.connection.readyState === 1;
+  } catch (error) {
+    console.error("Database connection error:", error);
+    return false;
+  }
+}
+
+export { checkDatabaseConnection };
 export default connectToDatabase;

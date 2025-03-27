@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
@@ -57,18 +57,10 @@ async function validateFileAccess(fileId: string, userId: string): Promise<Valid
 }
 
 // Handle HEAD requests for file existence check
-export async function HEAD(request: Request) {
+export async function HEAD(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-2)[0]; // Get second-to-last segment
+  
   try {
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop();
-    
-    if (!id) {
-      return NextResponse.json(
-        { message: 'File ID is required' },
-        { status: 400 }
-      );
-    }
-    
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -94,18 +86,10 @@ export async function HEAD(request: Request) {
 }
 
 // Handle GET requests for file download
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-2)[0]; // Get second-to-last segment
+  
   try {
-    const url = new URL(request.url);
-    const id = url.pathname.split('/').pop();
-    
-    if (!id) {
-      return NextResponse.json(
-        { message: 'File ID is required' },
-        { status: 400 }
-      );
-    }
-    
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
