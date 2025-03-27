@@ -1,5 +1,28 @@
 import mongoose from 'mongoose';
 
+// Define our cache interface
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+// Type for global cache
+declare global {
+  // eslint-disable-next-line no-var
+  var mongooseCache: MongooseCache | undefined;
+}
+
+// Create cache or use existing one
+const cache: MongooseCache = globalThis.mongooseCache || {
+  conn: null, 
+  promise: null,
+};
+
+// Only in development, reset cache on file changes
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.mongooseCache = cache;
+}
+
 // Get environment variables for connection options
 const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_BASE_URI = process.env.MONGODB_BASE_URI;
@@ -34,109 +57,61 @@ if (MONGODB_URI) {
   console.log('Using local MongoDB development connection');
 }
 
-// Track connection state
-let isConnected = false;
-// Global cached promise of the connection
-let dbConnectPromise: Promise<typeof mongoose> | null = null;
+// Configure connection options
+const opts: mongoose.ConnectOptions = {
+  bufferCommands: true,
+  serverSelectionTimeoutMS: 10000, // 10 seconds
+  connectTimeoutMS: 10000,
+};
+
+if (isAtlasConnection) {
+  opts.ssl = true;
+  opts.tls = true;
+  // Allow invalid certificates in non-production environments
+  opts.tlsAllowInvalidCertificates = process.env.NODE_ENV !== 'production';
+  opts.serverApi = {
+    version: "1",
+    strict: true,
+    deprecationErrors: true,
+  };
+}
 
 async function connectToDatabase() {
-  // If already connected, return immediately
-  if (isConnected) {
-    console.log('Already connected to MongoDB.');
-    return;
+  // Use cached connection if available
+  if (cache.conn) {
+    console.log('Using cached MongoDB connection');
+    return cache.conn;
   }
 
-  // If a connection is in progress, reuse that promise
-  if (dbConnectPromise) {
-    console.log('Reusing existing dbConnectPromise...');
-    await dbConnectPromise;
-    console.log('Existing dbConnectPromise resolved.');
-
-    // For Atlas connections, perform an admin ping to confirm a successful connection
-    if (isAtlasConnection && mongoose.connection && mongoose.connection.db) {
-      try {
-        const adminDb = mongoose.connection.db.admin();
-        await adminDb.command({ ping: 1 });
-        console.log('Pinged MongoDB Atlas successfully.');
-      } catch (pingError) {
-        console.error('Failed to ping MongoDB Atlas:', pingError);
-        throw pingError;
-      }
-    }
-
-    return;
+  // If no connection promise exists, create one
+  if (!cache.promise) {
+    console.log('Creating new MongoDB connection promise');
+    cache.promise = mongoose.connect(connectionString, opts)
+      .then((mongooseConnection) => {
+        // For Atlas connections, perform an admin ping to confirm connectivity
+        if (isAtlasConnection && mongoose.connection && mongoose.connection.db) {
+          return mongoose.connection.db.admin().command({ ping: 1 })
+            .then(() => {
+              console.log('Pinged MongoDB Atlas successfully.');
+              return mongooseConnection;
+            })
+            .catch((pingError) => {
+              console.error('Failed to ping MongoDB Atlas:', pingError);
+              throw pingError;
+            });
+        }
+        return mongooseConnection;
+      });
   }
 
   try {
-    console.log('Connecting to MongoDB...');
-
-    mongoose.connection.on('connecting', () => {
-      console.log('MongoDB connecting...');
-    });
-
-    mongoose.connection.on('connected', () => {
-      console.log('MongoDB connected!');
-      isConnected = true;
-    });
-
-    mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
-      isConnected = false;
-      dbConnectPromise = null;
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.log('MongoDB disconnected');
-      isConnected = false;
-      dbConnectPromise = null;
-    });
-
-    // Configure connection options based on connection type
-    const opts: mongoose.ConnectOptions = {
-      // Allow buffering commands until connection is established
-      bufferCommands: true,
-      serverSelectionTimeoutMS: 10000, // 10 seconds
-      connectTimeoutMS: 10000,
-    };
-
-    // Add SSL/TLS options for Atlas connections
-    if (isAtlasConnection) {
-      opts.ssl = true;
-      opts.tls = true;
-      // Allow invalid certs for some development environments
-      opts.tlsAllowInvalidCertificates = process.env.NODE_ENV !== 'production';
-      opts.serverApi = {
-        version: "1",
-        strict: true,
-        deprecationErrors: true,
-      };
-    }
-
-    // Create and store the connection promise
-    dbConnectPromise = mongoose.connect(connectionString, opts);
-    
-    // Await the connection
-    await dbConnectPromise;
-
-    // For Atlas connections, perform an admin ping to confirm a successful connection
-    if (isAtlasConnection && mongoose.connection && mongoose.connection.db) {
-      try {
-        const adminDb = mongoose.connection.db.admin();
-        await adminDb.command({ ping: 1 });
-        console.log('Pinged MongoDB Atlas successfully.');
-      } catch (pingError) {
-        console.error('Failed to ping MongoDB Atlas:', pingError);
-        throw pingError;
-      }
-    }
-
+    const mongooseConnection = await cache.promise;
+    cache.conn = mongooseConnection;
     console.log('MongoDB connection established successfully.');
-    
-    return;
+    return mongooseConnection;
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    isConnected = false;
-    dbConnectPromise = null;
+    cache.promise = null;
     throw error;
   }
 }
@@ -144,15 +119,10 @@ async function connectToDatabase() {
 // Health check function to verify database connection
 async function checkDatabaseConnection() {
   try {
-    // Check if already connected
-    if (!isConnected) {
-      await connectToDatabase();
-    }
-    
-    // Verify connection is actually alive
+    await connectToDatabase();
     return mongoose.connection.readyState === 1;
   } catch (error) {
-    console.error("Database connection error:", error);
+    console.error('Database connection error:', error);
     return false;
   }
 }
