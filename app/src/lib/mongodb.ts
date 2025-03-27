@@ -60,8 +60,10 @@ if (MONGODB_URI) {
 // Configure connection options
 const opts: mongoose.ConnectOptions = {
   bufferCommands: true,
-  serverSelectionTimeoutMS: 10000, // 10 seconds
-  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 30000, // 30 seconds (increased from 10)
+  connectTimeoutMS: 30000, // 30 seconds (increased from 10)
+  socketTimeoutMS: 45000, // 45 seconds
+  family: 4, // Use IPv4, skip trying IPv6
 };
 
 if (isAtlasConnection) {
@@ -69,6 +71,12 @@ if (isAtlasConnection) {
   opts.tls = true;
   // Allow invalid certificates in non-production environments
   opts.tlsAllowInvalidCertificates = process.env.NODE_ENV !== 'production';
+  
+  // Add retry capability for Atlas connections
+  opts.maxPoolSize = 10; // Default is 5
+  opts.retryWrites = true;
+  opts.retryReads = true;
+  
   opts.serverApi = {
     version: "1",
     strict: true,
@@ -79,26 +87,86 @@ if (isAtlasConnection) {
 async function connectToDatabase() {
   // Use cached connection if available
   if (cache.conn) {
-    console.log('Using cached MongoDB connection');
-    return cache.conn;
+    if (mongoose.connection.readyState === 1) {
+      console.log('Using cached MongoDB connection - connected');
+      return cache.conn;
+    } else if (mongoose.connection.readyState === 2) {
+      console.log('Using cached MongoDB connection - connecting');
+      return cache.conn;
+    } else {
+      console.log('Cached connection is not active, creating new one');
+      cache.conn = null;
+      cache.promise = null;
+    }
   }
 
   // If no connection promise exists, create one
   if (!cache.promise) {
     console.log('Creating new MongoDB connection promise');
-    cache.promise = mongoose.connect(connectionString, opts)
+    
+    // Set up events for better logging
+    mongoose.connection.on('connecting', () => {
+      console.log('MongoDB connecting...');
+    });
+
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB connected!');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+      // Reset cache on connection error
+      cache.conn = null;
+      cache.promise = null;
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+      // Reset cache when disconnected
+      cache.conn = null;
+      cache.promise = null;
+    });
+    
+    // Create connection with timeout
+    const connectWithTimeout = async (): Promise<typeof mongoose> => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        const timeout = setTimeout(() => {
+          clearTimeout(timeout);
+          reject(new Error('MongoDB connection timeout - promise timeout'));
+        }, 25000); // 25 second timeout
+      });
+      
+      try {
+        const connPromise = mongoose.connect(connectionString, opts);
+        return await Promise.race([connPromise, timeoutPromise]);
+      } catch (error) {
+        console.error('Connection attempt failed:', error);
+        throw error;
+      }
+    };
+    
+    cache.promise = connectWithTimeout()
       .then((mongooseConnection) => {
         // For Atlas connections, perform an admin ping to confirm connectivity
         if (isAtlasConnection && mongoose.connection && mongoose.connection.db) {
-          return mongoose.connection.db.admin().command({ ping: 1 })
-            .then(() => {
-              console.log('Pinged MongoDB Atlas successfully.');
-              return mongooseConnection;
-            })
-            .catch((pingError) => {
-              console.error('Failed to ping MongoDB Atlas:', pingError);
-              throw pingError;
-            });
+          const pingTimeout = new Promise<never>((_, reject) => {
+            const timeout = setTimeout(() => {
+              clearTimeout(timeout);
+              reject(new Error('MongoDB ping timeout'));
+            }, 5000); // 5 second ping timeout
+          });
+          
+          return Promise.race([
+            mongoose.connection.db.admin().command({ ping: 1 })
+              .then(() => {
+                console.log('Pinged MongoDB Atlas successfully.');
+                return mongooseConnection;
+              }),
+            pingTimeout
+          ]).catch((pingError) => {
+            console.error('Failed to ping MongoDB Atlas:', pingError);
+            throw pingError;
+          });
         }
         return mongooseConnection;
       });
