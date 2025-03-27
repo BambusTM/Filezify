@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import path from 'path';
 import fs from 'fs';
 import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
+import { createFolder } from '@/lib/storage';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
@@ -16,34 +17,31 @@ export async function POST(request: Request) {
             );
         }
 
-        const { folderName, parentPath } = await request.json();
-        if (!folderName) {
+        const { folderPath } = await request.json();
+        
+        if (!folderPath) {
             return NextResponse.json(
-                { message: 'Folder name is required' },
+                { message: 'Folder path is required' },
                 { status: 400 }
             );
         }
 
-        // Define user's base directory
-        const userBaseDir = path.join(process.cwd(), 'uploads', session.user.id);
-        // Determine target directory based on parentPath
-        const targetDir = parentPath ? path.join(userBaseDir, parentPath, folderName) : path.join(userBaseDir, folderName);
-
-        if (fs.existsSync(targetDir)) {
+        // Create folder
+        const success = await createFolder(session.user.id, folderPath);
+        
+        if (!success) {
             return NextResponse.json(
-                { message: 'Folder already exists' },
-                { status: 409 }
+                { message: 'Failed to create folder' },
+                { status: 500 }
             );
         }
 
-        fs.mkdirSync(targetDir, { recursive: true });
-
         return NextResponse.json(
-            { message: 'Folder created successfully', folder: folderName },
+            { message: 'Folder created successfully', path: folderPath },
             { status: 201 }
         );
-    } catch (error: unknown) {
-        console.error('Folder creation error:', error);
+    } catch (error) {
+        console.error('Error creating folder:', error);
         return NextResponse.json(
             { message: 'Error creating folder' },
             { status: 500 }
