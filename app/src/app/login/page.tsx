@@ -1,8 +1,7 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import AuthCard from '@/components/molecules/AuthCard';
 import AuthFormInput from '@/components/molecules/AuthFormInput';
@@ -11,14 +10,24 @@ import Button from '@/components/atoms/Button';
 import PageTransition from '@/components/PageTransition';
 import { useAuth } from "@/hooks/useAuth";
 
-export default function LoginPage() {
+// Loading component for suspense
+function LoginPageLoading() {
+  return (
+    <PageTransition className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="text-white">Loading...</div>
+    </PageTransition>
+  );
+}
+
+// Internal component that uses useSearchParams
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const { login, loading, error } = useAuth();
+  const { login, loading } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -79,5 +88,14 @@ export default function LoginPage() {
         </div>
       </AuthCard>
     </PageTransition>
+  );
+}
+
+// Main component wrapped with Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageLoading />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

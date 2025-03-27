@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File, { IFile } from '@/models/File';
 import Permission from '@/models/Permission';
@@ -57,10 +57,9 @@ async function validateFileAccess(fileId: string, userId: string): Promise<Valid
 }
 
 // Handle HEAD requests for file existence check
-export async function HEAD(
-  _request: Request,
-  context: { params: { id: string } }
-) {
+export async function HEAD(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-2)[0]; // Get second-to-last segment
+  
   try {
     const session = await getServerSession(authOptions);
 
@@ -71,8 +70,6 @@ export async function HEAD(
       );
     }
 
-    const params = await context.params;
-    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     return NextResponse.json(
@@ -89,10 +86,9 @@ export async function HEAD(
 }
 
 // Handle GET requests for file download
-export async function GET(
-  _request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-2)[0]; // Get second-to-last segment
+  
   try {
     const session = await getServerSession(authOptions);
 
@@ -103,8 +99,6 @@ export async function GET(
       );
     }
 
-    const params = await context.params;
-    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     if (result.status !== 200) {

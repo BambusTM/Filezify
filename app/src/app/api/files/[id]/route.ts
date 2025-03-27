@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
 import fs from 'fs';
 import path from 'path';
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-1)[0]; // Get last segment
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -20,7 +19,49 @@ export async function DELETE(
     }
 
     await connectToDatabase();
-    const fileId = params.id;
+    const fileId = id;
+
+    // Find the file in the database
+    const file = await File.findById(fileId);
+    if (!file) {
+      return NextResponse.json(
+        { message: 'File not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the user is the owner of the file
+    if (file.ownerId.toString() !== session.user.id) {
+      return NextResponse.json(
+        { message: 'You do not have permission to access this file' },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(file);
+  } catch (error) {
+    console.error('File retrieval error:', error);
+    return NextResponse.json(
+      { message: 'Error retrieving file' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const id = req.nextUrl.pathname.split('/').slice(-1)[0]; // Get last segment
+  
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await connectToDatabase();
+    const fileId = id;
 
     // Find the file in the database
     const file = await File.findById(fileId);

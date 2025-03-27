@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 
 export default function AppPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   
   // Redirect to login if not authenticated
   useEffect(() => {

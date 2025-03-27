@@ -4,11 +4,10 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import PageTransition from '@/components/PageTransition';
 
 export default function HomePage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   
   // Redirect to /app if already authenticated

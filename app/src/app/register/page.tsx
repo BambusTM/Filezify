@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import AuthCard from '@/components/molecules/AuthCard';
@@ -10,7 +10,17 @@ import Button from '@/components/atoms/Button';
 import PageTransition from '@/components/PageTransition';
 import { useRegister } from '@/hooks/useRegister';
 
-export default function RegisterPage() {
+// Loading component for suspense
+function RegisterPageLoading() {
+  return (
+    <PageTransition className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="text-white">Loading...</div>
+    </PageTransition>
+  );
+}
+
+// Internal component that uses useSearchParams
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/app';
@@ -18,7 +28,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const { register, loading, error } = useRegister();
+  const { register, loading } = useRegister();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,5 +101,14 @@ export default function RegisterPage() {
         </form>
       </AuthCard>
     </PageTransition>
+  );
+}
+
+// Main component wrapped with Suspense
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterPageLoading />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

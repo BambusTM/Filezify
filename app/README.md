@@ -80,3 +80,30 @@ src/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+# Database Status Feature
+
+## Overview
+
+The application now includes a database connectivity monitoring system. This feature:
+
+1. Checks if the MongoDB database is online
+2. Shows a user-friendly error page when the database is offline
+3. Automatically retries connections periodically
+4. Allows users to manually retry the connection
+
+## Components
+
+- **DatabaseStatusProvider**: Context provider that manages database status state
+- **DatabaseOfflinePage**: Beautiful error page displayed when the database is offline
+- **API Health Endpoint**: `/api/health/database` endpoint that checks database connectivity
+
+## How It Works
+
+1. The `DatabaseStatusProvider` regularly polls the health endpoint
+2. The App layout checks the database status and conditionally renders the offline page
+3. Users see a nicely designed page with the option to retry the connection when the database is down
+
+## Usage
+
+The database status check is automatically applied to all pages within the `/app` route. No additional configuration is needed.

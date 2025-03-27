@@ -1,6 +1,6 @@
 'use client';
 
-import { MutableRefObject, RefObject } from 'react';
+import { RefObject } from 'react';
 
 interface ActionBarProps {
   onCreateFolder: () => void;
