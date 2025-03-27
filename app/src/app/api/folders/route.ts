@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import path from 'path';
-import fs from 'fs';
 import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
-import { createFolder } from '@/lib/storage';
+import { createFolder, deleteFile } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
     try {
@@ -49,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
@@ -70,43 +68,33 @@ export async function DELETE(request: Request) {
             );
         }
 
-        // Define user's base directory
-        const userBaseDir = path.join(process.cwd(), 'uploads', session.user.id);
-        // Determine target directory
-        const targetDir = folderPath === '' 
-            ? path.join(userBaseDir, folderName)
-            : path.join(userBaseDir, folderPath, folderName);
-
-        if (!fs.existsSync(targetDir)) {
-            return NextResponse.json(
-                { message: 'Folder not found' },
-                { status: 404 }
-            );
-        }
-
-        // Delete files in the database that are in this folder
+        // Connect to database
         await connectToDatabase();
-        const folderPathInDb = folderPath === '' ? folderName : `${folderPath}/${folderName}`;
+        
+        // Construct the full folder path
+        const fullFolderPath = folderPath === '' 
+            ? folderName
+            : `${folderPath}/${folderName}`;
         
         // Find and delete files with paths that start with the folder path
         const filesToDelete = await File.find({ 
             ownerId: session.user.id,
-            path: { $regex: `^${folderPathInDb}/` }
+            path: { $regex: `^${fullFolderPath}/` }
         });
         
-        // Delete each file from the database
+        // Delete each file from storage and database
         for (const file of filesToDelete) {
+            // Delete from storage
+            await deleteFile(session.user.id, file.path);
+            // Delete from database
             await File.findByIdAndDelete(file._id);
         }
-
-        // Remove the directory and all its contents
-        fs.rmSync(targetDir, { recursive: true, force: true });
 
         return NextResponse.json(
             { message: 'Folder deleted successfully' },
             { status: 200 }
         );
-    } catch (error: unknown) {
+    } catch (error) {
         console.error('Folder deletion error:', error);
         return NextResponse.json(
             { message: 'Error deleting folder' },

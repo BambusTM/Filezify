@@ -20,6 +20,10 @@ interface UploadResult {
  * @param folderPath - The folder path to create
  */
 export async function createFolder(userId: string, folderPath: string): Promise<boolean> {
+  // Make sure folderPath is normalized
+  folderPath = folderPath.replace(/\\/g, '/');
+  console.log(`Creating folder: ${folderPath} for user ${userId}`);
+  
   if (isOnVercel) {
     // Vercel Blob doesn't need folders to be created explicitly
     // They're implicitly created when files are uploaded with path prefixes
@@ -33,6 +37,8 @@ export async function createFolder(userId: string, folderPath: string): Promise<
       }
       
       const targetDir = path.join(userBaseDir, folderPath);
+      console.log(`Creating directory: ${targetDir}`);
+      
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }

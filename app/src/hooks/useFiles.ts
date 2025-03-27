@@ -63,7 +63,13 @@ export function useFiles() {
     const createFolder = useCallback(async (folderName: string) => {
         setLoading(true);
         try {
-            await axios.post('/api/folders', { folderName, parentPath: currentFolder });
+            // Construct the full folder path based on current location
+            const folderPath = currentFolder 
+                ? `${currentFolder}/${folderName}` 
+                : folderName;
+                
+            // Send the complete folderPath to the API
+            await axios.post('/api/folders', { folderPath });
             await fetchFiles();
         } catch (err: unknown) {
             let errorMessage: string;
