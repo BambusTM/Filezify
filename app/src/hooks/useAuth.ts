@@ -5,7 +5,6 @@ import {useToast} from "@/providers/ToastProvider";
 
 export function useAuth() {
     const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { showError } = useToast();
 
@@ -21,7 +20,6 @@ export function useAuth() {
 
             if (result?.error) {
                 console.error('Login error:', result.error);
-                setError(result.error);
                 showError(result.error);
             } else {
                 router.push(callbackUrl);
@@ -29,12 +27,11 @@ export function useAuth() {
         } catch (err) {
             console.error('Login exception:', err);
             const errorMessage = 'An error occurred during login';
-            setError(errorMessage);
             showError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
-    return { login, loading, error };
+    return { login, loading };
 }

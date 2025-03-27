@@ -3,7 +3,6 @@ import {registerUser} from '@/services/authService';
 import {useToast} from "@/providers/ToastProvider";
 
 export function useRegister() {
-    const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { showError } = useToast();
 
@@ -13,11 +12,9 @@ export function useRegister() {
             return await registerUser(username, email, password);
         } catch (err: unknown) {
             if (err instanceof Error) {
-                setError(err.message);
                 showError(err.message);
             } else {
                 const errorMessage = 'Registration failed';
-                setError(errorMessage);
                 showError(errorMessage);
             }
             throw err;
@@ -26,5 +23,5 @@ export function useRegister() {
         }
     };
 
-    return { register, loading, error };
+    return { register, loading };
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File, { IFile } from '@/models/File';
 import Permission from '@/models/Permission';
@@ -57,11 +57,18 @@ async function validateFileAccess(fileId: string, userId: string): Promise<Valid
 }
 
 // Handle HEAD requests for file existence check
-export async function HEAD(
-  _request: Request,
-  context: { params: { id: string } }
-) {
+export async function HEAD(request: Request) {
   try {
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop();
+    
+    if (!id) {
+      return NextResponse.json(
+        { message: 'File ID is required' },
+        { status: 400 }
+      );
+    }
+    
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -71,8 +78,6 @@ export async function HEAD(
       );
     }
 
-    const params = await context.params;
-    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     return NextResponse.json(
@@ -89,11 +94,18 @@ export async function HEAD(
 }
 
 // Handle GET requests for file download
-export async function GET(
-  _request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const id = url.pathname.split('/').pop();
+    
+    if (!id) {
+      return NextResponse.json(
+        { message: 'File ID is required' },
+        { status: 400 }
+      );
+    }
+    
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -103,8 +115,6 @@ export async function GET(
       );
     }
 
-    const params = await context.params;
-    const { id } = params;
     const result = await validateFileAccess(id, session.user.id);
     
     if (result.status !== 200) {
