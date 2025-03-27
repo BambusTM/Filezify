@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
-import { createFolder, deleteFile } from '@/lib/storage';
+import { createFolder, deleteFolder } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
     try {
@@ -76,19 +76,26 @@ export async function DELETE(request: NextRequest) {
             ? folderName
             : `${folderPath}/${folderName}`;
         
-        // Find and delete files with paths that start with the folder path
+        console.log(`Attempting to delete folder: ${fullFolderPath}`);
+        
+        // Find files with paths that start with the folder path to remove from database
+        // This supports both files directly in the folder and in subfolders
         const filesToDelete = await File.find({ 
             ownerId: session.user.id,
-            path: { $regex: `^${fullFolderPath}/` }
+            path: { $regex: `^${fullFolderPath}(?:/|$)` }
         });
         
-        // Delete each file from storage and database
+        console.log(`Found ${filesToDelete.length} files to remove from database in folder ${fullFolderPath}`);
+        
+        // Delete files from database (storage files will be handled by deleteFolder)
         for (const file of filesToDelete) {
-            // Delete from storage
-            await deleteFile(session.user.id, file.path);
-            // Delete from database
+            console.log(`Removing file from database: ${file.path}`);
             await File.findByIdAndDelete(file._id);
         }
+        
+        // Delete the folder and all its contents from storage
+        const folderDeleted = await deleteFolder(session.user.id, fullFolderPath);
+        console.log(`Folder deletion result for ${fullFolderPath}: ${folderDeleted}`);
 
         return NextResponse.json(
             { message: 'Folder deleted successfully' },

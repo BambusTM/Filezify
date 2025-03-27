@@ -31,7 +31,8 @@ export default function AppPage() {
     setCurrentFolder, 
     createFolder,
     deleteFile,
-    deleteFolder
+    deleteFolder,
+    fetchFiles
   } = useFiles();
   
   // UI state hooks
@@ -124,6 +125,8 @@ export default function AppPage() {
         viewType={viewType}
         setViewType={handleViewTypeChange}
         onFileUpload={handleFileUpload}
+        currentFolder={currentFolder}
+        onFetchFiles={fetchFiles}
       />
       
       <FileContent 

@@ -255,6 +255,62 @@ export async function deleteFile(
 }
 
 /**
+ * Delete a folder from either Vercel Blob or local filesystem
+ * 
+ * @param userId - The user ID who owns the folder
+ * @param folderPath - The relative folder path
+ * @returns Success status
+ */
+export async function deleteFolder(
+  userId: string,
+  folderPath: string
+): Promise<boolean> {
+  // Normalize folder path to use forward slashes for consistency
+  folderPath = folderPath.replace(/\\/g, '/');
+  
+  if (isOnVercel) {
+    // In Vercel Blob, folders are virtual, so we don't need to delete them explicitly
+    // They will disappear when all files within them are deleted
+    return true;
+  } else {
+    // Use local filesystem in development
+    const fullFolderPath = path.join(process.cwd(), uploadDir, userId, folderPath);
+    
+    if (!fs.existsSync(fullFolderPath)) {
+      return true; // Folder already doesn't exist
+    }
+    
+    try {
+      // Check contents of the directory
+      const items = fs.readdirSync(fullFolderPath);
+      
+      // Recursively delete all subfolders and files
+      for (const item of items) {
+        const itemPath = path.join(fullFolderPath, item);
+        const stat = fs.statSync(itemPath);
+        
+        if (stat.isDirectory()) {
+          // Recursively delete subfolder (relative path for nested folder)
+          const relativeSubfolderPath = path.join(folderPath, item).replace(/\\/g, '/');
+          await deleteFolder(userId, relativeSubfolderPath);
+        } else {
+          // Delete file
+          fs.unlinkSync(itemPath);
+        }
+      }
+      
+      // Now the directory should be empty, delete it
+      fs.rmdirSync(fullFolderPath);
+      console.log(`Deleted folder: ${fullFolderPath}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting folder from filesystem:', error);
+      return false;
+    }
+  }
+}
+
+/**
  * List files in a directory (for both Vercel Blob and local filesystem)
  * 
  * @param userId - The user ID

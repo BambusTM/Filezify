@@ -1,6 +1,7 @@
 'use client';
 
 import { RefObject } from 'react';
+import ExtractArchiveButton from '../ExtractArchiveButton';
 
 interface ActionBarProps {
   onCreateFolder: () => void;
@@ -10,6 +11,8 @@ interface ActionBarProps {
   viewType: 'grid' | 'details';
   setViewType: (viewType: 'grid' | 'details') => void;
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  currentFolder: string;
+  onFetchFiles: () => void;
 }
 
 export default function ActionBar({
@@ -19,7 +22,9 @@ export default function ActionBar({
   uploading,
   viewType,
   setViewType,
-  onFileUpload
+  onFileUpload,
+  currentFolder,
+  onFetchFiles
 }: ActionBarProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 mt-4 flex justify-between">
@@ -27,6 +32,7 @@ export default function ActionBar({
         <button
           onClick={onCreateFolder}
           className="w-12 h-12 flex items-center justify-center bg-gray-800 rounded-md hover:bg-gray-700 focus:outline-none"
+          title="Create new folder"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -39,6 +45,7 @@ export default function ActionBar({
         <button
           onClick={onUploadButtonClick}
           className="w-12 h-12 flex items-center justify-center bg-gray-800 rounded-md hover:bg-gray-700 focus:outline-none"
+          title="Upload file"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -53,6 +60,12 @@ export default function ActionBar({
           onChange={onFileUpload}
           className="hidden"
           disabled={uploading}
+        />
+        
+        {/* Extract Archive Button */}
+        <ExtractArchiveButton 
+          currentFolder={currentFolder} 
+          onExtracted={onFetchFiles} 
         />
       </div>
       
