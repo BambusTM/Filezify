@@ -14,8 +14,18 @@ export async function POST(request: Request) {
       );
     }
 
-    await connectToDatabase();
+    // Ensure database connection is established before any operations
+    try {
+      await connectToDatabase();
+    } catch (dbError) {
+      console.error('Database connection error during registration:', dbError);
+      return NextResponse.json(
+          { message: 'Database connection failed. Please try again later.' },
+          { status: 503 }
+      );
+    }
 
+    // Only proceed with database operations after connection is confirmed
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
