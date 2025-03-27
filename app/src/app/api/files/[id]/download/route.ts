@@ -4,14 +4,13 @@ import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File, { IFile } from '@/models/File';
 import Permission from '@/models/Permission';
-import fs from 'fs';
-import path from 'path';
+import { getFileForDownload } from '@/lib/storage';
+import mongoose from 'mongoose';
 
 interface ValidationResult {
   status: number;
   message?: string;
   file?: IFile;
-  fullFilePath?: string;
 }
 
 // Helper function to validate file access
@@ -40,19 +39,9 @@ async function validateFileAccess(fileId: string, userId: string): Promise<Valid
     };
   }
 
-  // Verify file exists on disk
-  const fullFilePath = path.join(process.cwd(), 'uploads', file.ownerId.toString(), file.path);
-  if (!fs.existsSync(fullFilePath)) {
-    return { 
-      status: 404, 
-      message: 'File not found on disk' 
-    };
-  }
-
   return { 
     status: 200, 
-    file, 
-    fullFilePath 
+    file
   };
 }
 
@@ -109,21 +98,42 @@ export async function GET(req: NextRequest) {
     }
 
     const file = result.file!;
-    const fullFilePath = result.fullFilePath!;
+    
+    // Get file data from storage
+    const fileData = await getFileForDownload(
+      (file.ownerId as mongoose.Types.ObjectId).toString(),
+      file.path
+    );
+    
+    if (!fileData.exists) {
+      return NextResponse.json(
+        { message: 'File not found in storage' },
+        { status: 404 }
+      );
+    }
 
     // Increment download count
     file.downloadCount += 1;
     await file.save();
 
-    // Stream the file
-    const fileStream = fs.createReadStream(fullFilePath);
-    const fileSize = fs.statSync(fullFilePath).size;
+    // Set response headers
     const headers = new Headers();
     headers.set('Content-Type', file.type);
-    headers.set('Content-Length', fileSize.toString());
+    headers.set('Content-Length', fileData.size.toString());
     headers.set('Content-Disposition', `attachment; filename="${file.name}"`);
 
-    return new NextResponse(fileStream as unknown as ReadableStream, { headers });
+    if (fileData.buffer) {
+      // When using Vercel Blob, return the buffer
+      return new NextResponse(fileData.buffer, { headers });
+    } else if (fileData.stream) {
+      // When using local filesystem, return the stream
+      return new NextResponse(fileData.stream as unknown as ReadableStream, { headers });
+    } else {
+      return NextResponse.json(
+        { message: 'Error retrieving file data' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error downloading file:', error);
     return NextResponse.json(

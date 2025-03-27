@@ -3,8 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import File from '@/models/File';
-import fs from 'fs';
-import path from 'path';
+import { deleteFile } from '@/lib/storage';
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.pathname.split('/').slice(-1)[0]; // Get last segment
@@ -80,12 +79,14 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Define the physical file path
-    const filePath = path.join(process.cwd(), 'uploads', session.user.id, file.path);
+    // Delete the file using our storage service
+    const deleteSuccess = await deleteFile(
+      file.ownerId.toString(),
+      file.path
+    );
 
-    // Delete the file from the file system
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    if (!deleteSuccess) {
+      console.warn(`File at path ${file.path} could not be deleted from storage`);
     }
 
     // Delete the file from the database
