@@ -5,6 +5,7 @@ export interface IFile extends Document {
   ownerId: IUser['_id'];
   name: string;
   path: string;
+  url?: string; // URL for Vercel Blob (optional)
   size: number;
   type: string;
   uploadedAt: Date;
@@ -27,6 +28,10 @@ const FileSchema: Schema = new Schema({
   path: {
     type: String,
     required: [true, 'File path is required'],
+  },
+  url: {
+    type: String,
+    default: null,
   },
   size: {
     type: Number,
