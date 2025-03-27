@@ -5,6 +5,7 @@ import { createContext, useContext, ReactNode } from 'react';
 
 type ToastContextType = {
   showError: (message: string) => void;
+  showSuccess: (message: string) => void;
 };
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -34,8 +35,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const showSuccess = (message: string) => {
+    toast.success(message, {
+      style: {
+        background: '#333',
+        color: '#fff',
+        borderRadius: '8px',
+      },
+      iconTheme: {
+        primary: '#10b981', // Green color
+        secondary: '#fff',
+      },
+    });
+  };
+
   return (
-    <ToastContext.Provider value={{ showError }}>
+    <ToastContext.Provider value={{ showError, showSuccess }}>
       {children}
       <Toaster position="top-right" />
     </ToastContext.Provider>
