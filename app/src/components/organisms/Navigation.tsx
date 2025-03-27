@@ -18,6 +18,9 @@ export default function Navigation() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-300">{session.user.name}</span>
+              <Link href="/profile/settings" className="text-sm text-gray-300 hover:text-white">
+                Settings
+              </Link>
               <button onClick={() => signOut()} className="btn btn-secondary">
                 Sign out
               </button>
