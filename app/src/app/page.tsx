@@ -1,92 +1,261 @@
 'use client';
 
-import Navigation from '@/components/organisms/Navigation';
-import { useFiles } from '@/hooks/useFiles';
-import Button from '@/components/atoms/Button';
-import {ChangeEvent} from "react";
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import PageTransition from '@/components/PageTransition';
 
 export default function HomePage() {
-  const { files, loading, error, uploadFile } = useFiles();
-
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await uploadFile(file);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  
+  // Redirect to /app if already authenticated
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/app');
+    }
+  }, [status, router]);
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        duration: 0.8,
+        when: "beforeChildren",
+        staggerChildren: 0.2
+      }
+    }
   };
 
-  if (loading) {
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-xl text-gray-300">Loading...</div>
-        </div>
-    );
-  }
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { duration: 0.5 }
+    }
+  };
+
+  const handleGetStarted = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push('/login?callbackUrl=/app');
+  };
+
+  const handleSignUp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push('/register?callbackUrl=/app');
+  };
 
   return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <div className="py-10 px-4 sm:px-6 lg:px-8">
+    <PageTransition className="w-full">
+      <div className="relative min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden text-gray-100">
+        {/* Background decor */}
+        <div className="absolute inset-0 z-0 opacity-10">
+          <div className="absolute top-10 right-10 w-20 h-20 rounded-full bg-indigo-500"></div>
+          <div className="absolute bottom-10 left-40 w-32 h-32 rounded-full bg-indigo-600"></div>
+          <div className="absolute top-40 left-20 w-16 h-16 rounded-full bg-indigo-700"></div>
+          <div className="absolute bottom-40 right-20 w-24 h-24 rounded-full bg-indigo-400"></div>
+          <div className="absolute inset-0 backdrop-blur-3xl"></div>
+        </div>
+
+        {/* Hero Section */}
+        <section className="relative z-10 px-4 pt-24 pb-16 md:pt-32 md:pb-24">
           <div className="max-w-7xl mx-auto">
-            <header className="mb-8 text-center">
-              <h1 className="text-4xl font-extrabold text-accent mb-2">Your Files</h1>
-              <p className="text-gray-400">Manage and view your uploaded files</p>
-            </header>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center"
+            >
+              <div className="lg:col-span-3">
+                <motion.h1 
+                  variants={itemVariants}
+                  className="text-6xl md:text-7xl lg:text-8xl font-extrabold text-white mb-6 leading-tight"
+                >
+                  Manage Your Files
+                  <span className="block text-indigo-400">With Ease</span>
+                </motion.h1>
+                
+                <motion.p 
+                  variants={itemVariants}
+                  className="text-xl md:text-2xl text-gray-300 mb-10 max-w-2xl"
+                >
+                  Store, organize, and access your files from anywhere with powerful sharing options 
+                  and enterprise-grade security.
+                </motion.p>
+                
+                <motion.div 
+                  variants={itemVariants}
+                  className="flex flex-wrap gap-4"
+                >
+                  <motion.button
+                    onClick={handleGetStarted}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-8 py-4 text-white bg-indigo-600 rounded-lg shadow-lg hover:bg-indigo-700 transition duration-300 text-lg font-medium"
+                  >
+                    Get Started
+                  </motion.button>
+                  <motion.button
+                    onClick={handleSignUp}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-8 py-4 text-indigo-400 bg-gray-800 border border-indigo-500 rounded-lg shadow-lg hover:bg-gray-700 transition duration-300 text-lg font-medium"
+                  >
+                    Sign Up Free
+                  </motion.button>
+                </motion.div>
+              </div>
+              
+              <motion.div 
+                variants={itemVariants}
+                className="lg:col-span-2 relative"
+              >
+                <div className="w-full h-56 md:h-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl overflow-hidden relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/60 to-gray-900/30"></div>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-indigo-400 relative z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
 
-            <div className="mb-8 flex justify-center">
-              <label className="relative cursor-pointer overflow-hidden">
-                <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    disabled={loading}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <Button className="btn-primary">Upload File</Button>
-              </label>
-              {loading && <p className="ml-4 text-gray-400">Uploading...</p>}
-            </div>
+        {/* Features Section */}
+        <section className="relative z-10 px-4 py-16 bg-gray-900/50">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-16"
+            >
+              <motion.h2 
+                variants={itemVariants}
+                className="text-3xl md:text-4xl font-bold text-indigo-400 mb-4"
+              >
+                Why Choose Filezify
+              </motion.h2>
+              <motion.div 
+                variants={itemVariants}
+                className="w-24 h-1 bg-indigo-600 mb-6"
+              />
+            </motion.div>
 
-            {error && <div className="mb-4 text-center text-red-400">{error}</div>}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {files.length === 0 ? (
-                  <p className="text-gray-400 col-span-full text-center">No files uploaded yet</p>
-              ) : (
-                  files.map((file: any) => (
-                      <div
-                          key={file.id}
-                          className="relative group bg-gray-800 rounded-lg p-4 shadow-lg transform transition hover:-translate-y-1 fade-in cursor-pointer"
-                          onClick={() => (window.location.href = `/api/files/${file.id}/download`)}
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <svg
-                              className="w-12 h-12 text-white group-hover:animate-pop"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                          >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"
-                            />
-                          </svg>
-                        </div>
-                        <h3 className="text-xl font-semibold text-accent">{file.name}</h3>
-                        <p className="text-gray-400 text-sm">
-                          {new Date(file.uploadedAt).toLocaleDateString()} • {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <div className="mt-2 flex justify-between items-center">
-                          {file.locked && <span className="text-yellow-500">🔒</span>}
-                          <span className="text-gray-400 text-sm">{file.downloadCount} downloads</span>
-                        </div>
-                      </div>
-                  ))
-              )}
+            <motion.div 
+              variants={containerVariants}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12"
+            >
+              <motion.div
+                variants={itemVariants}
+                className="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700"
+              >
+                <div className="text-indigo-400 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-200">Secure Storage</h3>
+                <p className="text-gray-400">
+                  Your files are encrypted and stored securely, ensuring your data stays private.
+                </p>
+              </motion.div>
+              
+              <motion.div
+                variants={itemVariants}
+                className="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700"
+              >
+                <div className="text-indigo-400 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-200">Easy Sharing</h3>
+                <p className="text-gray-400">
+                  Share files and folders with others with just a few clicks.
+                </p>
+              </motion.div>
+              
+              <motion.div
+                variants={itemVariants}
+                className="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700"
+              >
+                <div className="text-indigo-400 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12" y2="18"></line>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-2 text-gray-200">Access Anywhere</h3>
+                <p className="text-gray-400">
+                  Access your files from any device, anytime, anywhere.
+                </p>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+        
+        {/* CTA Section */}
+        <section className="relative z-10 px-4 py-16 bg-indigo-900/40">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="md:flex items-center justify-between bg-gray-800 p-8 md:p-12 rounded-xl border border-gray-700 shadow-xl"
+            >
+              <div className="md:max-w-xl mb-8 md:mb-0">
+                <motion.h2 
+                  variants={itemVariants}
+                  className="text-3xl font-bold mb-4 text-indigo-300"
+                >
+                  Ready to Get Started?
+                </motion.h2>
+                <motion.p 
+                  variants={itemVariants}
+                  className="text-gray-300 mb-0"
+                >
+                  Join thousands of satisfied users who trust Filezify for their file management needs.
+                </motion.p>
+              </div>
+              <motion.div 
+                variants={itemVariants}
+              >
+                <motion.button
+                  onClick={handleSignUp}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-8 py-4 bg-indigo-600 text-white font-medium rounded-lg shadow-lg hover:bg-indigo-500 transition duration-300 w-full md:w-auto"
+                >
+                  Create Free Account
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+        
+        {/* Footer */}
+        <footer className="relative z-10 px-4 py-8 mt-8 border-t border-gray-800">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-gray-400 text-center">
+              © {new Date().getFullYear()} Filezify. All rights reserved.
             </div>
           </div>
-        </div>
+        </footer>
       </div>
+    </PageTransition>
   );
 }
